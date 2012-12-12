@@ -24,6 +24,8 @@ try {
     }
 }
 
+parsers.push(require('redisparse'))
+
 parsers.push(require("./lib/parser/javascript"));
 
 function RedisClient(stream, options) {
@@ -68,6 +70,7 @@ function RedisClient(stream, options) {
     this.selected_db = null;	// save the selected db here, used when reconnecting
 
     this.old_state = null;
+    this.partial_response = []
 
     var self = this;
 
@@ -259,7 +262,23 @@ RedisClient.prototype.init_parser = function () {
     this.reply_parser.on("reply error", function (reply) {
         self.return_error(new Error(reply));
     });
+    this.reply_parser.on("reply partial", function (reply) {
+        self.partial_response.push(reply); // Anti-streaming.
+    })
     this.reply_parser.on("reply", function (reply) {
+        if (self.partial_response.length) {
+            self.partial_response.push(reply);
+            if (typeof reply === 'string') {
+                reply = self.partial_response.join('');
+            }
+            else if (reply instanceof Buffer) {
+                reply = Buffer.concat(self.partial_response);
+            }
+            else {
+                reply = Array.prototype.concat.apply([], self.partial_response);
+            }
+            self.partial_response = [];
+        }
         self.return_reply(reply);
     });
     // "error" is bad.  Somehow the parser got confused.  It'll try to reset and continue.
