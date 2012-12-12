@@ -7,6 +7,9 @@
     "scripts": {
         "test": "node ./test.js"
     },
+    "dependencies": {
+      "redisparse": "*"
+    },
     "devDependencies": {
         "metrics": ">=0.1.5"
     },
