@@ -19,6 +19,15 @@ var redis = require("./index"),
 // Set this to truthy to see the wire protocol and other debugging info
 redis.debug_mode = process.argv[2];
 
+if (process.argv[3] === '--slice') { // Really need optimist here.
+  var size = +process.argv[4] || 10
+  redis.debug_transform_data = function (buffer, f) {
+    for (var i = 0; i < buffer.length; i += size) {
+      f(buffer.slice(i, Math.min(buffer.length, i + size)))
+    }
+  }
+}
+
 function buffers_to_strings(arr) {
     return arr.map(function (val) {
         return val.toString();

@@ -492,7 +492,15 @@ RedisClient.prototype.on_data = function (data) {
     }
 
     try {
-        this.reply_parser.execute(data);
+        if (exports.debug_transform_data) {
+          var self = this
+          exports.debug_transform_data(data, function(data) {
+            self.reply_parser.execute(data);
+          });
+        }
+        else {
+          this.reply_parser.execute(data);
+        }
     } catch (err) {
         // This is an unexpected parser problem, an exception that came from the parser code itself.
         // Parser should emit "error" events if it notices things are out of whack.
